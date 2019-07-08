@@ -4,6 +4,10 @@
 #include<iostream>
 #include<math.h>
 using namespace std;
+static bool l_button_down = false, r_button_down = false, mid_button_down = false;
+static int last_x = -1, last_y = -1;
+#define  GLUT_WHEEL_UP		3 // 滚轮操作  
+#define  GLUT_WHEEL_DOWN	4
 GLfloat modelview_matrix[16];
 GLfloat theta[3] = { 0.0,0.0,0.0 };
 const int n = 1000;
@@ -27,63 +31,104 @@ GLint view = 0;
 GLfloat angle = 0.0f;
 void reshape_func(int w,int h);
 void display_func();
-void draw();
 void drawPig();
 void Initial(void);
 void onMouse(int button, int state, int x, int y);
 void RotateRect();
 void absolute_default();
 void absolute_scale(GLfloat factor);
+void mouse_click_func(int button, int state, int x, int y);
+void mouse_move_func(int x, int y);
+void absolute_translate(GLfloat x, GLfloat y, GLfloat z);
+void absolute_rotate(GLfloat dgree, GLfloat vecx, GLfloat vecy, GLfloat vecz);
 
-// 画图函数
-void draw()
+void absolute_translate(GLfloat x, GLfloat y, GLfloat z)
 {
-	// 
-	//GLfloat color[] = { .4f,.4f,.4f,.4f,1.0f };
-	drawPig();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	glTranslatef(x, y, z);
+	glMultMatrixf(modelview_matrix); // 使变换矩阵左乘到当前矩阵，这样才适合绝对坐标的考虑
+	glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix);
+	glPopMatrix();
 }
-// 画第一只猪
+void absolute_rotate(GLfloat dgree, GLfloat vecx, GLfloat vecy, GLfloat vecz)
+{
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	glTranslatef(.0, .0, -modelview_z_dis);		// 平移回去，注意该句和后两句要倒序来看
+	glRotatef(dgree, vecx, vecy, vecz);// 积累旋转量
+	glTranslatef(.0, .0, modelview_z_dis);		// 先平移到原点
+	glMultMatrixf(modelview_matrix); // 使变换矩阵左乘到当前矩阵，这样才适合绝对坐标的考虑
+	glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix);
+	glPopMatrix();
+}
+void mouse_move_func(int x, int y)
+{
+	y = win_h - y;
+	if (last_x >= 0 && last_y >= 0 && (last_x != x || last_y != y)) {
+		GLfloat deltax = GLfloat(x - last_x), deltay = GLfloat(y - last_y);
+		if (mid_button_down) {
+			absolute_translate(deltax * .1f, deltay * .1f, .0f);
+			glutPostRedisplay();
+		}
+		else if (l_button_down) {
+			GLfloat dis = sqrt(deltax*deltax + deltay * deltay);
+			absolute_rotate(dis, -deltay / dis, deltax / dis, .0);
+			glutPostRedisplay();
+		}
+	}
+	last_x = x; last_y = y;
+}
+// 画图函数
 void drawPig()
 {
-	//RotateRect();
-	glRotatef(angle, 0, 1, 0);
-	glTranslatef(ax, ay, az);
-	glScalef(mx, my, mz);
-	// 每个轴的旋转角度
-	glRotatef(theta[1], 0.0, 1.0, 0.0);
-	//glRotatef(theta[2], 0.0, 0.0, 1.0);
+	// 旋转设置
+	glRotatef(angle, 0, 0, 0);
+	glPushMatrix();
+	glColor3f(1.0, 0.8, 0.8);
+	glutSolidSphere(0.25f, 100, 100);  //身体
+	glPopMatrix();
 
 	glPushMatrix();
-	glTranslatef(0.15, -0.2, 0.125);
-	glColor3f(1.0, 0.5, 0.5);
-	glutSolidSphere(0.05f, 100, 100); //左前脚
+	glTranslatef(0, -0.2, 0);
+	glColor3f(1.0, 0.8, 0.8);
+	glutSolidSphere(0.25f, 100, 100);  //身体
+	glPopMatrix();
+
+	glPushMatrix();
+	glColor3f(0.0, 0.0, 0.0);
+	glTranslatef(0.05, 0.08, 0.23);
+	glutSolidSphere(0.013f, 1000, 1000);  //左眼
+	glPopMatrix();
+
+	glPushMatrix();
+	glColor3f(0.0, 0.0, 0.0);
+	glTranslatef(-0.05, 0.08, 0.23);
+	glutSolidSphere(0.013f, 1000, 1000);  //右眼
+	glPopMatrix();
+
+	glPushMatrix();
+	glColor3f(1.0, 0.0, 0.0);
+	glTranslatef(-0.01, 0.01, 0.23);
+	glutSolidSphere(0.06f, 1000, 1000);  //嘴巴
 	glPopMatrix();
 
 	glPushMatrix();
 	glColor3f(1.0, 0.5, 0.5);
-	glTranslatef(-0.15, -0.2, 0.125);
-	glutSolidSphere(0.05f, 100, 100); //右前脚
+	glTranslatef(0.02, 0.01, 0.23);
+	glutSolidSphere(0.013f, 1000, 1000);  //左鼻孔
 	glPopMatrix();
 
 	glPushMatrix();
 	glColor3f(1.0, 0.5, 0.5);
-	glTranslatef(0.15, -0.2, -0.125);
-	glutSolidSphere(0.05f, 100, 100); //左后脚
+	glTranslatef(-0.02, 0.01, 0.23);
+	glutSolidSphere(0.013f, 1000, 1000);  //右鼻孔
 	glPopMatrix();
 
-	glPushMatrix();
-	glColor3f(1.0, 0.5, 0.5);
-	glTranslatef(-0.15, -0.2, -0.125);
-	glutSolidSphere(0.05f, 100, 100); //右后脚
-	glPopMatrix();
 
-	glPushMatrix();
-	glColor3f(1.0, 0.5, 0.5);
-	GLUquadricObj *quadratic;
-	quadratic = gluNewQuadric();
-	gluCylinder(quadratic, 0.05f, 0.05f, 0.27f, 50, 50); //鼻子
-	glPopMatrix();
-
+	// 绘制三角形，耳朵
 	glPushMatrix();
 	glColor3f(1.0, 0.5, 0.5);
 	glBegin(GL_TRIANGLES);
@@ -118,47 +163,32 @@ void drawPig()
 	glEnd(); //右耳
 	glPopMatrix();
 
+	// 手
 	glPushMatrix();
-	glColor3f(1.0, 0.8, 0.8);
-	glutSolidSphere(0.25f, 100, 100);  //身体
+	glColor3f(1.0, 0.5, 0.5);
+	glTranslatef(0.30, -0.2, 0.1);
+	glScaled(2.0,-1.0,2.0);
+	glutSolidSphere(0.05f, 50, 1000);  
 	glPopMatrix();
 
 	glPushMatrix();
 	glColor3f(1.0, 0.5, 0.5);
-	glBegin(GL_POLYGON);
-	for (int i = 0; i < n; ++i)
-		glVertex3f(0.06*cos(2 * Pi / n * i), 0.04*sin(2 * Pi / n * i), 0.27f);
-	glEnd();//鼻子(表面)
+	glTranslatef(-0.30, -0.2, 0.1);
+	glScaled(2.0,1.0, 2.0);
+	glutSolidSphere(0.05f, 50, 1000);  
+	glPopMatrix();
+	// 脚
+	glPushMatrix();
+	glColor3f(0.0, 0.0, 0.0);
+	glTranslatef(0.07, -0.4, 0.1);
+	glutSolidSphere(0.05f, 1000, 1000);  //左脚
 	glPopMatrix();
 
 	glPushMatrix();
 	glColor3f(0.0, 0.0, 0.0);
-	glBegin(GL_POLYGON);
-	for (int i = 0; i < n; ++i)
-		glVertex3f(-0.02 + 0.01*cos(2 * Pi / n * i), 0.01*sin(2 * Pi / n * i), 0.27f);
-	glEnd();//右鼻孔
+	glTranslatef(-0.07, -0.4, 0.1);
+	glutSolidSphere(0.05f, 1000, 1000);  //右脚
 	glPopMatrix();
-
-	glPushMatrix();
-	glColor3f(0.0, 0.0, 0.0);
-	glBegin(GL_POLYGON);
-	for (int i = 0; i < n; ++i)
-		glVertex3f(0.02 + 0.01*cos(2 * Pi / n * i), 0.01*sin(2 * Pi / n * i), 0.27f);
-	glEnd();//左鼻孔
-	glPopMatrix();
-
-	glPushMatrix();
-	glColor3f(0.0, 0.0, 0.0);
-	glTranslatef(0.05, 0.08, 0.23);
-	glutSolidSphere(0.013f, 1000, 1000);  //左眼
-	glPopMatrix();
-
-	glPushMatrix();
-	glColor3f(0.0, 0.0, 0.0);
-	glTranslatef(-0.05, 0.08, 0.23);
-	glutSolidSphere(0.013f, 1000, 1000);  //右眼
-	glPopMatrix();
-
 }
 // 初始化设置
 void Initial(void)
@@ -221,7 +251,7 @@ void display_func()
 	// 画图函数	
 
 	glPushMatrix();
-	drawPig();
+	 drawPig();
 	glPopMatrix();
 
 	// 交换两个缓冲区指针
@@ -253,10 +283,7 @@ void onMouse(int button,int state,int x,int y)
 		glutIdleFunc(NULL);
 	}
 }
-static bool l_button_down = false, r_button_down = false, mid_button_down = false;
-static int last_x = -1, last_y = -1;
-#define  GLUT_WHEEL_UP		3 // 滚轮操作  
-#define  GLUT_WHEEL_DOWN	4
+
 void absolute_default()
 {
 	memcpy(modelview_matrix, default_matrix, sizeof(default_matrix));
@@ -349,6 +376,7 @@ int main(int argc, char*argv[])
 
 	// 设置鼠标事件
 	glutMouseFunc(onMouse);
+	glutMotionFunc(mouse_move_func);
 	Initial();
 	glutMainLoop();
 }
