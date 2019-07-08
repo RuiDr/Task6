@@ -4,14 +4,7 @@
 #include<iostream>
 #include<math.h>
 using namespace std;
-static bool l_button_down = false, r_button_down = false, mid_button_down = false;
-static int last_x = -1, last_y = -1;
-#define  GLUT_WHEEL_UP		3 // 滚轮操作  
-#define  GLUT_WHEEL_DOWN	4
 GLfloat modelview_matrix[16];
-GLfloat theta[3] = { 0.0,0.0,0.0 };
-const int n = 1000;
-const GLfloat Pi = 3.1415926536F;
 const int win_w = 700, win_h = 700;
 GLfloat ex[3] = { 0.0, 0.0, 0.0 }; //观察者位置
 GLfloat ey[3] = { 1.0, 0.0, 0.0 };
@@ -19,14 +12,7 @@ GLfloat ez[3] = { 4.0, 0.0, 0.0 };
 GLfloat fx[3] = { 0.0, 0.0, 0.0 }; //观察对象位置
 GLfloat fy[3] = { 0.0, 0.0, 0.0 };
 GLfloat fz[3] = { 0.0, 0.0, 0.0 };
-GLfloat default_matrix[16];
-GLfloat modelview_z_dis;
-GLfloat ax = -1.0f; //第一只猪的初始坐标
-GLfloat ay = 0.0f;
-GLfloat az = 0.0f;
-GLfloat mx = 1.0f; //第一只猪缩放倍数
-GLfloat my = 1.0f;
-GLfloat mz = 1.0f;
+
 GLint view = 0;
 GLfloat angle = 0.0f;
 void reshape_func(int w,int h);
@@ -35,52 +21,7 @@ void drawPig();
 void Initial(void);
 void onMouse(int button, int state, int x, int y);
 void RotateRect();
-void absolute_default();
-void absolute_scale(GLfloat factor);
-void mouse_click_func(int button, int state, int x, int y);
-void mouse_move_func(int x, int y);
-void absolute_translate(GLfloat x, GLfloat y, GLfloat z);
-void absolute_rotate(GLfloat dgree, GLfloat vecx, GLfloat vecy, GLfloat vecz);
 
-void absolute_translate(GLfloat x, GLfloat y, GLfloat z)
-{
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	glTranslatef(x, y, z);
-	glMultMatrixf(modelview_matrix); // 使变换矩阵左乘到当前矩阵，这样才适合绝对坐标的考虑
-	glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix);
-	glPopMatrix();
-}
-void absolute_rotate(GLfloat dgree, GLfloat vecx, GLfloat vecy, GLfloat vecz)
-{
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	glTranslatef(.0, .0, -modelview_z_dis);		// 平移回去，注意该句和后两句要倒序来看
-	glRotatef(dgree, vecx, vecy, vecz);// 积累旋转量
-	glTranslatef(.0, .0, modelview_z_dis);		// 先平移到原点
-	glMultMatrixf(modelview_matrix); // 使变换矩阵左乘到当前矩阵，这样才适合绝对坐标的考虑
-	glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix);
-	glPopMatrix();
-}
-void mouse_move_func(int x, int y)
-{
-	y = win_h - y;
-	if (last_x >= 0 && last_y >= 0 && (last_x != x || last_y != y)) {
-		GLfloat deltax = GLfloat(x - last_x), deltay = GLfloat(y - last_y);
-		if (mid_button_down) {
-			absolute_translate(deltax * .1f, deltay * .1f, .0f);
-			glutPostRedisplay();
-		}
-		else if (l_button_down) {
-			GLfloat dis = sqrt(deltax*deltax + deltay * deltay);
-			absolute_rotate(dis, -deltay / dis, deltax / dis, .0);
-			glutPostRedisplay();
-		}
-	}
-	last_x = x; last_y = y;
-}
 // 画图函数
 void drawPig()
 {
@@ -112,21 +53,21 @@ void drawPig()
 	glPushMatrix();
 	glColor3f(1.0, 0.0, 0.0);
 	glTranslatef(-0.01, 0.01, 0.23);
+	glScaled(1.35, -1.0, 1.0);
 	glutSolidSphere(0.06f, 1000, 1000);  //嘴巴
 	glPopMatrix();
 
 	glPushMatrix();
 	glColor3f(1.0, 0.5, 0.5);
-	glTranslatef(0.02, 0.01, 0.23);
+	glTranslatef(0.0175, 0.01, 0.23);
 	glutSolidSphere(0.013f, 1000, 1000);  //左鼻孔
 	glPopMatrix();
 
 	glPushMatrix();
 	glColor3f(1.0, 0.5, 0.5);
-	glTranslatef(-0.02, 0.01, 0.23);
+	glTranslatef(-0.0175, 0.01, 0.23);
 	glutSolidSphere(0.013f, 1000, 1000);  //右鼻孔
 	glPopMatrix();
-
 
 	// 绘制三角形，耳朵
 	glPushMatrix();
@@ -168,14 +109,14 @@ void drawPig()
 	glColor3f(1.0, 0.5, 0.5);
 	glTranslatef(0.30, -0.2, 0.1);
 	glScaled(2.0,-1.0,2.0);
-	glutSolidSphere(0.05f, 50, 1000);  
+	glutSolidSphere(0.035f, 50, 1000);  
 	glPopMatrix();
 
 	glPushMatrix();
 	glColor3f(1.0, 0.5, 0.5);
 	glTranslatef(-0.30, -0.2, 0.1);
 	glScaled(2.0,1.0, 2.0);
-	glutSolidSphere(0.05f, 50, 1000);  
+	glutSolidSphere(0.035f, 50, 1000);  
 	glPopMatrix();
 	// 脚
 	glPushMatrix();
@@ -240,16 +181,6 @@ void display_func()
 	}
 	glEnd();
 
-	//glMatrixMode(GL_MODELVIEW);
-	
-	//glColor3f(0.0f, 0.0f, 0.0f);
-	//glRectf(50.0f, 100.0f, 150.0f, 50.0f);//图形的坐标，绘制一个左上角在（50，100），右下角在（150，50）的矩形
-	// 指定哪个矩阵是当前矩阵
-	// GL_PROJECTION 投影, GL_MODELVIEW 模型视图, GL_TEXTURE 纹理
-	// ?
-	//glLoadMatrixf(modelview_matrix);
-	// 画图函数	
-
 	glPushMatrix();
 	 drawPig();
 	glPopMatrix();
@@ -269,7 +200,6 @@ void RotateRect()
 	}
 	Sleep(30);
 	display_func();
-
 }
 // 鼠标事件
 void onMouse(int button,int state,int x,int y)
@@ -284,82 +214,6 @@ void onMouse(int button,int state,int x,int y)
 	}
 }
 
-void absolute_default()
-{
-	memcpy(modelview_matrix, default_matrix, sizeof(default_matrix));
-}
-void absolute_scale(GLfloat factor)
-{
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	glTranslatef(.0, .0, -modelview_z_dis);		// 平移回去，注意该句和后两句要倒序来看
-	glScalef(factor, factor, factor);
-	glTranslatef(.0, .0, modelview_z_dis);		// 先平移到原点
-	glMultMatrixf(modelview_matrix); // 使变换矩阵左乘到当前矩阵，这样才适合绝对坐标的考虑
-	glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix);
-	glPopMatrix();
-}
-void mouse_click_func(int button, int state, int x, int y)
-{
-	y = win_h - y;
-	switch (button) {
-		// 左按钮
-	case GLUT_LEFT_BUTTON:
-		if (state == GLUT_DOWN) {
-			l_button_down = true;
-			last_x = x; last_y = y;
-			glutSetCursor(GLUT_CURSOR_CROSSHAIR);
-		}
-		else {
-			l_button_down = false;
-			last_x = -1; last_y = -1;
-			glutSetCursor(GLUT_CURSOR_INHERIT);
-		}
-		break;
-		// 中间
-	case GLUT_MIDDLE_BUTTON:
-		if (state == GLUT_DOWN) {
-			mid_button_down = true;
-			last_x = x; last_y = y;
-			glutSetCursor(GLUT_CURSOR_CYCLE);
-
-		}
-		else {
-			mid_button_down = false;
-			last_x = -1; last_y = -1;
-			glutSetCursor(GLUT_CURSOR_INHERIT);
-		}
-		break;
-		// 右边
-	case GLUT_RIGHT_BUTTON:
-		if (state == GLUT_DOWN) {
-			r_button_down = true;
-			absolute_default();
-			glutSetCursor(GLUT_CURSOR_LEFT_ARROW);
-			glutPostRedisplay();
-		}
-		else {
-			r_button_down = false;
-			glutSetCursor(GLUT_CURSOR_INHERIT);
-		}
-		break;
-		// 转动
-	case GLUT_WHEEL_UP:
-		if (state == GLUT_UP) {
-			absolute_scale(.9f);
-			glutPostRedisplay();
-		}
-		break;
-		// 向下转动
-	case GLUT_WHEEL_DOWN:
-		if (state == GLUT_UP) {
-			absolute_scale(1.1f);
-			glutPostRedisplay();
-		}
-		break;
-	}
-}
 int main(int argc, char*argv[])
 {
 	glutInit(&argc, argv);
@@ -369,7 +223,7 @@ int main(int argc, char*argv[])
 	glutInitWindowSize(700, 700);
 	glutInitWindowPosition(0, 0);
 
-	glutCreateWindow("CrazyCake的第一个opengl程序");
+	glutCreateWindow("一只独立特行的猪");
 	// 显示图像
 	glutDisplayFunc(display_func);
 	// 改变窗口大小时保持图像比例
@@ -377,7 +231,6 @@ int main(int argc, char*argv[])
 
 	// 设置鼠标事件
 	glutMouseFunc(onMouse);
-	glutMotionFunc(mouse_move_func);
 	Initial();
 	glutMainLoop();
 }
