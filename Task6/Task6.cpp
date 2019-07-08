@@ -189,7 +189,7 @@ void display_func()
 	glutSwapBuffers();
 }
 /*
-	单击左键开始旋转，右键暂停
+	单击左键开始旋转，右键停止
 */
 void RotateRect()
 {
