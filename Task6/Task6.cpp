@@ -363,6 +363,7 @@ void mouse_click_func(int button, int state, int x, int y)
 int main(int argc, char*argv[])
 {
 	glutInit(&argc, argv);
+
 	// 设置初始显示模式，指定RGB颜色模式以及指定双缓存窗口
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
 	glutInitWindowSize(700, 700);
